@@ -1,0 +1,68 @@
+name: Build and Sign Installer
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Run unit tests
+        run: dotnet test ZeroParadesPTBR.Tests/ZeroParadesPTBR.Tests.csproj -c Release
+
+      - name: Publish Windows x64
+        run: |
+          dotnet publish ZeroParadesPTBR/ZeroParadesPTBR.csproj `
+            -c Release -r win-x64 --self-contained true `
+            -o publish/ZeroParadesPTBR_Windows
+          Remove-Item publish/ZeroParadesPTBR_Windows/createdump.exe -ErrorAction SilentlyContinue
+          Remove-Item publish/ZeroParadesPTBR_Windows/*.pdb -ErrorAction SilentlyContinue
+
+      - name: Upload unsigned artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ZeroParadesPTBR-unsigned
+          path: publish/ZeroParadesPTBR_Windows/
+
+  sign:
+    needs: build
+    if: vars.SIGNPATH_ENABLED == 'true'
+    runs-on: windows-latest
+    steps:
+      - name: Download unsigned artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ZeroParadesPTBR-unsigned
+          path: unsigned/
+
+      - name: Submit to SignPath
+        uses: signpath/github-action-submit-signing-request@v2
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG }}
+          signing-policy-slug: ${{ vars.SIGNPATH_SIGNING_POLICY_SLUG }}
+          artifact-configuration-slug: zip-archive
+          input-artifact-path: unsigned/
+          output-artifact-path: signed/ZeroParadesPTBR_Windows_Signed.zip
+          wait-for-completion: true
+
+      - name: Upload signed artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ZeroParadesPTBR-signed
+          path: signed/ZeroParadesPTBR_Windows_Signed.zip

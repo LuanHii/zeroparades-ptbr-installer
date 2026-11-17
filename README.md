@@ -17,16 +17,3 @@ Este repositório contém **apenas o código-fonte do instalador** — nenhum ar
 dotnet test ZeroParadesPTBR.Tests/ZeroParadesPTBR.Tests.csproj
 dotnet publish ZeroParadesPTBR/ZeroParadesPTBR.csproj -c Release -r win-x64 --self-contained true -o dist/ZeroParadesPTBR_Windows
 ```
-
-## Assinatura gratuita com SignPath.io
-
-1. Crie um repositório **público** no GitHub contendo apenas o conteúdo desta pasta (`installer/`).
-2. Cadastre-se no [SignPath.io](https://signpath.io/) (plano gratuito *Open Source*) e conecte o repositório.
-3. No GitHub (`Settings → Secrets and variables → Actions`):
-   - **Secret:** `SIGNPATH_API_TOKEN`
-   - **Variables:**
-     - `SIGNPATH_ENABLED` = `true`
-     - `SIGNPATH_ORGANIZATION_ID` = seu Organization ID do SignPath
-     - `SIGNPATH_PROJECT_SLUG` = slug do projeto no SignPath (ex.: `zeroparades-ptbr-installer`)
-     - `SIGNPATH_SIGNING_POLICY_SLUG` = `release-signing` (ou o slug da sua política)
-4. Crie uma tag `v1.0.0` (ou execute o workflow manualmente em **Actions → Build and Sign Installer**).
